@@ -125,7 +125,7 @@ function History() {
 }
 
 
-function deleteSelected() {//###Deselect Frame after Select All is WEIRD
+function deleteSelected() {
 	if (selectedFrames.length > 0) {
 		history.remember();
 		for (var i in selectedFrames){
@@ -354,7 +354,7 @@ function refreshFrames() {
 			);
 			
 		
-		//###TO BE REMOVED IN FINAL VERSION (devContainer REFRESH)
+		//###TO BE REMOVED IN FINAL VERSION (devContainer REFRESH)?
 		var devContainer = document.getElementById("devContainer");
 		devContainer.innerHTML = (
 			"<b><u>DEVELOPER VIEW</u></b> <br />"
@@ -372,7 +372,7 @@ function refreshFrames() {
 	}
 }
 
-function downloadFrames() {
+function downloadFrames() { //### Can't be done in Javascript
 	var allContents = "";
 	for (frameId in allFrames) {
 		allContents += allFrames[frameId].content + ", ";
