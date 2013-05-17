@@ -7,6 +7,12 @@
 	position: relative;
 	display: inline-block;
 }
+
+#numLabel {
+	font-style: oblique;
+	font-weight: bold;
+	font-size: 10px;
+}
 </style>
 
 <title>
@@ -19,10 +25,12 @@ Hello, World!
 
 
 <!--BUTTONS AND INPUT CONTROLS-->
-<div id="controls">
-	
-<input id=newFrameContent type="text" value="BANANA"/> <br />
-<input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;height: 30px ;"/> <br />
+<div id="controlContainer"  style="padding:15px; width:650px;border:thick solid green;">
+<b><u>CONTROLS</u></b> <br />
+New Frame Content: 
+<input id=newFrameContent style="width:291px;" type="text" value="BANANA"/> <br />
+Extra Style: 
+<input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;width: 344px ;"/> <br />
 <input type="button" onclick="addNewFrame()" value="New Frame"/>
 <input type="button" onclick="deleteSelected()" value="Delete Selection"/>
 <input type="button" onclick="selectAll()" value="Select All"/>
@@ -34,12 +42,19 @@ Hello, World!
 </div>
 
 <!--CONTENT-->
+<div id="mainMainContainer"  style="position:absolute; top:155px; width:415px;border:thick solid black;display: inline-block;"> <!--###Seriously rename this, Casey -->
+<b><u>DATA</u></b> <br />
 <div id="mainContainer">
 OLD INFORMATION (MAIN)
 </div>
 
+<div id="pagesContainer">
+OLD INFORMATION (PAGES)
+</div>
+</div>
+
 <!--DEVELOPER DATA-->
-<div id="devContainer" style="padding:15px;position:absolute; left:400px; top:100px;border:thick solid green;">
+<div id="devContainer" style="padding:15px;position:absolute; left:445px; top:150px;border:thick solid green;">
 OLD INFORMATION (DEV)
 </div>
 
@@ -51,11 +66,13 @@ function Frame(content, style) {
 	this.content = content,
 	this.style = style
 }
-//LIST (array) OF ALL FRAMES
+//CORE VARIABLES
 var allFrames = [];
 var selectedFrames = [];
 var allSelected = false;
 var history = new History();
+var currentPage = 0;
+var framesPerPage = 15;
 
 //MEMORY OBJECT
 function History() {
@@ -126,27 +143,31 @@ function addNewFrame() {
 function edit(frameId) {
 	history.remember();
 	var newContent = prompt("What is the new value?");
-	var oldStyle = allFrames[frameId].style;
-	var editedFrame = new Frame(newContent, oldStyle);
-	editedFrame.id = frameId;
-	allFrames[frameId] = editedFrame;
-	refreshFrames()
+	if (newContent!==null){
+		var oldStyle = allFrames[frameId].style;
+		var editedFrame = new Frame(newContent, oldStyle);
+		editedFrame.id = frameId;
+		allFrames[frameId] = editedFrame;
+		refreshFrames()
+	}
 }
 
 function editSelection() {
 	if (selectedFrames.length > 0) {
 		history.remember();
 		var newContent = prompt("What is the new value?");
-		for (var i in selectedFrames){
-			var frameId = selectedFrames[i];
-			var oldStyle = allFrames[frameId].style;
-			var editedFrame = new Frame(newContent, oldStyle);
-			editedFrame.id = frameId
-			allFrames[frameId] = editedFrame;
+		if (newContent!==null){
+			for (var i in selectedFrames){
+				var frameId = selectedFrames[i];
+				var oldStyle = allFrames[frameId].style;
+				var editedFrame = new Frame(newContent, oldStyle);
+				editedFrame.id = frameId
+				allFrames[frameId] = editedFrame;
+			}
+			selectedFrames = [];
+			allSelected = false;
+			refreshFrames();
 		}
-		selectedFrames = [];
-		allSelected = false;
-		refreshFrames();
 	} else {
 		alert("No data is selected!");
 	}
@@ -178,7 +199,7 @@ function selectAll() {
 	refreshFrames();
 }
 
-function duplicateSelection() { //###
+function duplicateSelection() { 
 	if (selectedFrames.length > 0) {
 		history.remember();
 		for (var i in selectedFrames){
@@ -193,18 +214,28 @@ function duplicateSelection() { //###
 	}
 }
 
-function refreshFrames() {
-	//Store last action for undo
-	//selectedFrames = selectedFrames_old;
-	//allFrames = allFrames_old;
-	
+function changeCurrentPage(newPage) {
+	currentPage = newPage;
+	refreshFrames();
+}
+
+function refreshFrames() {	
 	//Re-write all inner HTML
 	var container = document.getElementById("mainContainer");
 	container.innerHTML = "";
 	try 
 		{
 		var allFramesLength = allFrames.length;
-		for (var i = 0; i < allFramesLength; i++) {
+		var j = 0 //Frame for individual pages (ie, 0 to framesPerPage).
+		for (var i = currentPage*framesPerPage; i < allFramesLength; i++) {
+
+			//Only display Frames on current page
+			if (j === framesPerPage) {
+				break;
+			} else {
+				j += 1;
+			}
+
 			//Used to keep selected boxes "checked"
 			if (selectedFrames.indexOf(i)>=0) {
 				var selected = "checked";
@@ -212,27 +243,48 @@ function refreshFrames() {
 				var selected = "";
 			}
 			
+			//Display Frames on currentPage
 			container.innerHTML += (
 				"<div id=\"frameCheckboxCombo\">"
-				+ "<div style=\"float:left;\">"
-					//Note that Checkbox ID === Frame ID === i
+				+ "<div style=\"float:left;\">" //Checkbox
+					//Note that Checkbox ID === Frame ID === Edit Button ID = i
 				+ "<input type=\"checkbox\" id=\"" + i + "\" " 
 				+ "onclick=\"toggleSelection(" 
 				+ i + ");\" " + selected + " />"
 				+ "</div>"
-				+ "<div style=\"float:right;\">"
-					//Note that Checkbox ID === Frame ID === i
+				+ "<div id=\"numLabel\" style=\"float:left;\">" //Label (number)
+				+ i + ".) &nbsp"
+				+ "</div>"
+				+ "<div style=\"float:right;\">" //Edit Button
 				+ "<input type=\"button\"  value= \"E\" id=\"" + i + "\" " 
 				+ "onclick=\"edit(" 
 				+ i + ");\" " + selected + " />"
 				+ "</div>"
-				+"<div style=\"float:right;" 
+				+"<div style=\"float:right;"  //Data
 				+ allFrames[i].style + "\">"
 				+ allFrames[i].content
 				+ "</div>"
 				+ "</div><br />"
 			);
+			
 		}
+		//Display Page Options below Frames
+		var pagesContainer = document.getElementById("pagesContainer");
+		pagesContainer.innerHTML = "Page Options: ";
+			var maxPage = Math.floor(allFramesLength/framesPerPage);
+			for (var i = 0; i <= maxPage; i++) {
+				if (i===maxPage && allFramesLength%framesPerPage===0){ //Don't allow empty pages.
+					break;
+				} else if (i===currentPage){ //Format currentPage differently.
+				pagesContainer.innerHTML += (
+					"<input type=\"button\" onclick=\"changeCurrentPage(" + i + ");\" value=\"<" + i + ">\"/>"
+					);
+				} else {
+				pagesContainer.innerHTML += (
+					"<input type=\"button\" onclick=\"changeCurrentPage(" + i + ");\" value=\"" + i + "\"/>"
+					);
+				}
+			}
 
 		//###TO BE REMOVED IN FINAL VERSION (devContainer REFRESH)
 		var devContainer = document.getElementById("devContainer");
@@ -243,6 +295,7 @@ function refreshFrames() {
 			+"Selected Frames: [" + selectedFrames + "]<br />"
 			+"Redo History: [" + history.allFrames_recentVersions.length + "]<br />"
 			+"Undo History: [" + history.allFrames_oldVersions.length + "]<br />"
+			+"Current Page: " + currentPage + "<br />"
 			+"<input type=\"button\" onclick=\"refreshFrames()\" value=\"REFRESH\"/>"
 			);
 	}
