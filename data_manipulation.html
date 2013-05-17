@@ -31,18 +31,19 @@ New Frame Content:
 <input id=newFrameContent style="width:291px;" type="text" value="BANANA"/> <br />
 Extra Style: 
 <input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;width: 344px ;"/> <br />
-<input type="button" onclick="addNewFrame()" value="New Frame"/>
-<input type="button" onclick="deleteSelected()" value="Delete Selection"/>
+<input type="button" onclick="addFrame()" value="Add Frame"/>
+<input type="button" onclick="addManyFrames()" value="Add Many Frames"/>
+<input type="button" onclick="deleteSelected()" value="Delete*"/>
 <input type="button" onclick="selectAll()" value="Select All"/>
 <input type="button" onclick="history.undo()" value="Undo"/>
 <input type="button" onclick="history.redo()" value="Redo"/>
-<input type="button" onclick="duplicateSelection()" value="Duplicate Selection"/>
-<input type="button" onclick="editSelection()" value="Edit Selection"/>
-
+<input type="button" onclick="duplicateSelection()" value="Duplicate*"/>
+<input type="button" onclick="editSelection()" value="Edit*"/>
+<font size=2><center>*Requires a Selection. </center></font>
 </div>
 
 <!--CONTENT-->
-<div id="mainMainContainer"  style="position:absolute; top:155px; width:415px;border:thick solid black;display: inline-block;"> <!--###Seriously rename this, Casey -->
+<div id="mainMainContainer"  style="position:absolute; top:165px; width:415px;border:thick solid black;display: inline-block;"> <!--###Seriously rename this, Casey -->
 <b><u>DATA</u></b> <br />
 <div id="mainContainer">
 OLD INFORMATION (MAIN)
@@ -54,7 +55,7 @@ OLD INFORMATION (PAGES)
 </div>
 
 <!--DEVELOPER DATA-->
-<div id="devContainer" style="padding:15px;position:absolute; left:445px; top:150px;border:thick solid green;">
+<div id="devContainer" style="padding:15px;position:absolute; left:445px; top:175px;border:thick solid green;">
 OLD INFORMATION (DEV)
 </div>
 
@@ -129,7 +130,7 @@ function deleteSelected() {
 	}
 }
 
-function addNewFrame() {
+function addFrame() {
 	history.remember();
 	var newContent = document.getElementById("newFrameContent").value;
 	var newStyle = document.getElementById("newFrameStyle").value;
@@ -138,6 +139,25 @@ function addNewFrame() {
 	allFrames[allFrames.length] = newFrame;
 	allSelected = false; //Since a new frame has been added, not all frames are selected.
 	refreshFrames()
+}
+
+function addManyFrames() {
+	var quantity = prompt("How many Frames to insert?");
+	if (quantity > 0) {
+		history.remember();
+		for (var quantity;quantity > 0; quantity-=1){
+			var newContent = document.getElementById("newFrameContent").value;
+			var newStyle = document.getElementById("newFrameStyle").value;
+			var newFrame = new Frame(newContent, newStyle);
+			newFrame.id = allFrames.length; //Uses 0-based Index
+			allFrames[allFrames.length] = newFrame;
+		}
+		selectedFrames = [];
+		allSelected = false;
+		refreshFrames();
+	} else {
+		alert("Quantity must be a positive integer!");
+	}
 }
 
 function edit(frameId) {
