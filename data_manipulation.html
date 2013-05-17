@@ -1,0 +1,265 @@
+<html>
+
+<head>
+<style>
+#frameCheckboxCombo {
+	background-color: orange;
+	position: relative;
+	display: inline-block;
+}
+</style>
+
+<title>
+Hello, World!
+</title>
+
+</head>
+
+<body> 
+
+
+<!--BUTTONS AND INPUT CONTROLS-->
+<div id="controls">
+	
+<input id=newFrameContent type="text" value="BANANA"/> <br />
+<input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;height: 30px ;"/> <br />
+<input type="button" onclick="addNewFrame()" value="New Frame"/>
+<input type="button" onclick="deleteSelected()" value="Delete Selection"/>
+<input type="button" onclick="selectAll()" value="Select All"/>
+<input type="button" onclick="history.undo()" value="Undo"/>
+<input type="button" onclick="history.redo()" value="Redo"/>
+<input type="button" onclick="duplicateSelection()" value="Duplicate Selection"/>
+<input type="button" onclick="editSelection()" value="Edit Selection"/>
+
+</div>
+
+<!--CONTENT-->
+<div id="mainContainer">
+OLD INFORMATION (MAIN)
+</div>
+
+<!--DEVELOPER DATA-->
+<div id="devContainer" style="padding:15px;position:absolute; left:400px; top:100px;border:thick solid green;">
+OLD INFORMATION (DEV)
+</div>
+
+
+<script>
+//FRAME OBJECT
+function Frame(content, style) {
+	this.id = null,
+	this.content = content,
+	this.style = style
+}
+//LIST (array) OF ALL FRAMES
+var allFrames = [];
+var selectedFrames = [];
+var allSelected = false;
+var history = new History();
+
+//MEMORY OBJECT
+function History() {
+	this.memoryLimit = 25, //Number of past versions to remember.
+	this.allFrames_oldVersions = [], //Stack structure with head at index 0.
+	this.allFrames_recentVersions = [], //Stack structure with head at index 0.
+	
+	this.undo = function() {
+		if (this.allFrames_oldVersions.length > 0){
+			this.allFrames_recentVersions.splice(0,0,allFrames.splice(0));
+			allFrames = this.allFrames_oldVersions.splice(0,1)[0];
+			refreshFrames();
+		} else {
+			alert("No undo history available!");
+		}
+	},
+	this.redo = function() {
+		if (this.allFrames_recentVersions.length > 0){
+			this.allFrames_oldVersions.splice(0,0,allFrames.splice(0));
+			allFrames = this.allFrames_recentVersions.splice(0,1)[0];
+			refreshFrames();
+		} else {
+			alert("No redo history available!");
+		}
+	},
+	this.remember = function() {
+		try{
+			this.allFrames_recentVersions = [] //Erase Redo history
+			if (this.allFrames_oldVersions.length < this.memoryLimit) {
+				this.allFrames_oldVersions.splice(0,0,allFrames.slice(0));
+			} else {
+				this.allFrames_oldVersions.splice(this.memoryLimit-1,1); //Erase the oldest entry
+				this.allFrames_oldVersions.splice(0,0,allFrames.slice(0));
+			}
+		}
+		catch (err) {
+			alert("ERROR:" + err.message + "(MEM)");
+		}
+	}
+}
+
+
+function deleteSelected() {
+	if (selectedFrames.length > 0) {
+		history.remember();
+		for (var i in selectedFrames){
+			allFrames.splice(selectedFrames[i],1);
+		}
+		selectedFrames = [];
+		allSelected = false;
+		refreshFrames();
+	} else {
+		alert("No data is selected!");
+	}
+}
+
+function addNewFrame() {
+	history.remember();
+	var newContent = document.getElementById("newFrameContent").value;
+	var newStyle = document.getElementById("newFrameStyle").value;
+	var newFrame = new Frame(newContent, newStyle);
+	newFrame.id = allFrames.length; //Uses 0-based Index
+	allFrames[allFrames.length] = newFrame;
+	allSelected = false; //Since a new frame has been added, not all frames are selected.
+	refreshFrames()
+}
+
+function edit(frameId) {
+	history.remember();
+	var newContent = prompt("What is the new value?");
+	var oldStyle = allFrames[frameId].style;
+	var editedFrame = new Frame(newContent, oldStyle);
+	editedFrame.id = frameId;
+	allFrames[frameId] = editedFrame;
+	refreshFrames()
+}
+
+function editSelection() {
+	if (selectedFrames.length > 0) {
+		history.remember();
+		var newContent = prompt("What is the new value?");
+		for (var i in selectedFrames){
+			var frameId = selectedFrames[i];
+			var oldStyle = allFrames[frameId].style;
+			var editedFrame = new Frame(newContent, oldStyle);
+			editedFrame.id = frameId
+			allFrames[frameId] = editedFrame;
+		}
+		selectedFrames = [];
+		allSelected = false;
+		refreshFrames();
+	} else {
+		alert("No data is selected!");
+	}
+}
+
+function toggleSelection(frameId) {
+	if (selectedFrames.indexOf(frameId) >= 0) { //If the Frame was already selected.
+		var indexOfFrame = selectedFrames.indexOf(frameId);
+		selectedFrames.splice(indexOfFrame,1);
+	} else {
+		selectedFrames[selectedFrames.length] = frameId;
+	}
+	selectedFrames.sort();
+	selectedFrames.reverse();
+	allSelected = false; //Remember that a modification was made after selecting all frames.
+}
+
+function selectAll() {
+	selectedFrames = [] //Deselect all frames
+	if (allSelected) {
+		allSelected = false;
+	} else {
+		var maxFrameId = (allFrames.length-1)
+		for(i = 0; i <= maxFrameId; i++) { //Select all Frames from greatest to smallest index
+			selectedFrames.splice(0, 0, i );
+		allSelected = true;
+		}
+	}	
+	refreshFrames();
+}
+
+function duplicateSelection() { //###
+	if (selectedFrames.length > 0) {
+		history.remember();
+		for (var i in selectedFrames){
+			frameClone = allFrames.slice(selectedFrames[i],selectedFrames[i]+1)[0];
+			allFrames.splice(selectedFrames[i],0,frameClone);
+		}
+		selectedFrames = [];
+		allSelected = false;
+		refreshFrames();
+	} else {
+		alert("No data is selected!");
+	}
+}
+
+function refreshFrames() {
+	//Store last action for undo
+	//selectedFrames = selectedFrames_old;
+	//allFrames = allFrames_old;
+	
+	//Re-write all inner HTML
+	var container = document.getElementById("mainContainer");
+	container.innerHTML = "";
+	try 
+		{
+		var allFramesLength = allFrames.length;
+		for (var i = 0; i < allFramesLength; i++) {
+			//Used to keep selected boxes "checked"
+			if (selectedFrames.indexOf(i)>=0) {
+				var selected = "checked";
+			} else {
+				var selected = "";
+			}
+			
+			container.innerHTML += (
+				"<div id=\"frameCheckboxCombo\">"
+				+ "<div style=\"float:left;\">"
+					//Note that Checkbox ID === Frame ID === i
+				+ "<input type=\"checkbox\" id=\"" + i + "\" " 
+				+ "onclick=\"toggleSelection(" 
+				+ i + ");\" " + selected + " />"
+				+ "</div>"
+				+ "<div style=\"float:right;\">"
+					//Note that Checkbox ID === Frame ID === i
+				+ "<input type=\"button\"  value= \"E\" id=\"" + i + "\" " 
+				+ "onclick=\"edit(" 
+				+ i + ");\" " + selected + " />"
+				+ "</div>"
+				+"<div style=\"float:right;" 
+				+ allFrames[i].style + "\">"
+				+ allFrames[i].content
+				+ "</div>"
+				+ "</div><br />"
+			);
+		}
+
+		//###TO BE REMOVED IN FINAL VERSION (devContainer REFRESH)
+		var devContainer = document.getElementById("devContainer");
+		devContainer.innerHTML = (
+			"<b><u>DEVELOPER VIEW</u></b> <br />"
+			+"Number of Frames: " + allFrames.length + "<br />"
+			+"Number of Selected Frames: " + selectedFrames.length + "<br />"
+			+"Selected Frames: [" + selectedFrames + "]<br />"
+			+"Redo History: [" + history.allFrames_recentVersions.length + "]<br />"
+			+"Undo History: [" + history.allFrames_oldVersions.length + "]<br />"
+			+"<input type=\"button\" onclick=\"refreshFrames()\" value=\"REFRESH\"/>"
+			);
+	}
+	catch (error)
+		{
+		alert("ERROR:\n" + error.message);
+	}
+}
+
+refreshFrames();
+
+
+</script>
+
+
+</body>
+</html>
+
+</html>
+

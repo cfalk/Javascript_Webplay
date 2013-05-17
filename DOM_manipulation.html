@@ -1,0 +1,152 @@
+<html>
+
+<head>
+<style>
+#stuff {
+	position:	relative;
+	top:		0px;
+	left:		10px;
+	
+	height:		300px;
+	width:		200px;
+	
+	background-color:	red;
+	
+	border-style:	outset;
+	border-color:	green;
+	border-width:	5px;
+	padding:		10px;
+	
+	border-radius:	25px;
+}
+
+#info {
+	position:	absolute;
+	top:		220px;
+	right:		10px;
+	
+	width:		100px;
+		
+	border-style:	outset;
+	border-color:	black;
+	border-width:	2px;
+	padding:		10px;
+	
+	border-radius:	25px;
+	background-color:white;
+}
+
+#mainContainer {
+	position:		absolute;
+	display:		inline-block;
+	margin:			0 auto;
+	background-color:#E0E0E0;
+	
+	border-style:	outset;
+	border-color:	black;
+	border-width:	2px;
+	padding:		10px;
+	
+	border-radius:	25px;
+	text-align:		center;
+}
+</style>
+
+
+<script>
+var numLines = 0
+var replace = false;
+function changeText(replace){
+	var myTextField = document.getElementById("myText");
+	if (myTextField.value != ""){
+		if (confirm("Insert: \"" + myTextField.value + "\"?")){
+			if (!replace){
+				numLines += 1
+				document.getElementById("stuff").innerHTML+=(numLines + ".) " + myTextField.value+" <br/>");
+			} else{ /* REPLACE ALL TEXT */
+				numLines = 1
+				document.getElementById("stuff").innerHTML=(numLines + ".) " + myTextField.value+" <br/>");
+			}
+		}
+	} else {
+		alert("No text available to insert.");
+	}
+	updateInfo()
+}
+
+function changeColor(){
+	var myElementStyle = document.getElementById("stuff").style
+	if(myElementStyle.backgroundColor==="red"){
+		myElementStyle.backgroundColor = "blue";
+	} else {
+		myElementStyle.backgroundColor = "red";
+	}
+	updateInfo()
+}
+
+function toggleBorder(){
+	var myElementStyle = document.getElementById("stuff").style
+	if (myElementStyle.borderStyle==="outset"){
+		myElementStyle.borderStyle = "none";
+	} else {
+		myElementStyle.borderStyle = "outset";
+	}
+	updateInfo()
+}
+
+function toggleCurves(){
+	var myElementStyle = document.getElementById("stuff").style
+	if (myElementStyle.borderRadius=== "0px"){
+		myElementStyle.borderRadius = "25px";
+	} else {
+		myElementStyle.borderRadius = "0px";
+	}
+	updateInfo()
+}
+
+function updateInfo(){
+	var myElementStyle = document.getElementById("stuff").style
+	var a = myElementStyle.backgroundColor
+	var b = myElementStyle.borderStyle
+	var c = myElementStyle.borderRadius
+	var documentText = document.getElementById("info")
+	documentText.innerHTML = ("<b><u><center></c>DETAILS:</center></u></b>")
+	documentText.innerHTML += ("Color: " + a + "<br/>")
+	documentText.innerHTML += ("Style: " + b + "<br/>") 
+	documentText.innerHTML += ("Radius: " + c + "<br/>")
+}
+</script>
+
+<title>
+Hello, World!
+</title>
+
+</head>
+
+<body> <div>
+
+<div id="mainContainer">
+<!-- VISUAL INTERFACE -->
+<b>JavaScript Buttons!</b><br/>
+<input type="text" id="myText"/>
+<input type="button" onclick="changeText(false)" value="Insert New Line!" />
+<input type="button" onclick="changeText(true)" value="Replace All!" />
+<br/>
+<br/>
+<input type="button" onclick="changeColor()" value="Change the Color!" />
+<input type="button" onclick="toggleBorder()" value="Toggle the Border!" />
+<input type="button" onclick="toggleCurves()" value="Toggle the Curves!" />
+<br /><br />
+
+<div id="stuff">
+<!-- EMPTY -->
+</div>
+
+<div id="info">
+<script>updateInfo();</script>
+</div>
+
+</div>
+
+</div></body>
+</html>
