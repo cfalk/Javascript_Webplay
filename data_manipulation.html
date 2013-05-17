@@ -13,6 +13,12 @@
 	font-weight: bold;
 	font-size: 10px;
 }
+
+#menuButton {
+	font-style: oblique;
+	font-weight: bold;
+	font-size: 10px;
+}
 </style>
 
 <title>
@@ -30,16 +36,18 @@ Hello, World!
 New Frame Content: 
 <input id=newFrameContent style="width:291px;" type="text" value="BANANA"/> <br />
 Extra Style: 
-<input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;width: 344px ;"/> <br />
-<input type="button" onclick="addFrame()" value="Add Frame"/>
-<input type="button" onclick="addManyFrames()" value="Add Many Frames"/>
-<input type="button" onclick="deleteSelected()" value="Delete*"/>
-<input type="button" onclick="selectAll()" value="Select All"/>
-<input type="button" onclick="history.undo()" value="Undo"/>
-<input type="button" onclick="history.redo()" value="Redo"/>
-<input type="button" onclick="duplicateSelection()" value="Duplicate*"/>
-<input type="button" onclick="editSelection()" value="Edit*"/>
+<input id=newFrameStyle  style="width:350px;" type="text" value="background-color: yellow ;width: 300px ;"/> <br />
+<input id="menuButton" type="button" onclick="addFrame()" value="Add Frame"/>
+<input id="menuButton", type="button"  onclick="addManyFrames()" value="Add Many Frames"/>
+<input id="menuButton", type="button"  onclick="deleteSelected()" value="Delete*"/>
+<input id="menuButton", type="button"  onclick="selectAll()" value="Select All"/>
+<input id="menuButton", type="button"  onclick="history.undo()" value="Undo"/>
+<input id="menuButton", type="button"  onclick="history.redo()" value="Redo"/>
+<input id="menuButton", type="button"  onclick="duplicateSelection()" value="Duplicate*"/>
+<input id="menuButton", type="button"  onclick="editSelection()" value="Edit*"/>
+<input id="menuButton", type="button"  onclick="downloadFrames()" value="Download"/>
 <font size=2><center>*Requires a Selection. </center></font>
+
 </div>
 
 <!--CONTENT-->
@@ -74,6 +82,7 @@ var allSelected = false;
 var history = new History();
 var currentPage = 0;
 var framesPerPage = 15;
+var maxPage = 0; // Automatically updated upon refresh
 
 //MEMORY OBJECT
 function History() {
@@ -116,14 +125,26 @@ function History() {
 }
 
 
-function deleteSelected() {
+function deleteSelected() {//###Deselect Frame after Select All is WEIRD
 	if (selectedFrames.length > 0) {
 		history.remember();
 		for (var i in selectedFrames){
-			allFrames.splice(selectedFrames[i],1);
+			var frameId = parseInt(selectedFrames[i]);
+			allFrames.splice(frameId,1);
 		}
 		selectedFrames = [];
 		allSelected = false;
+				
+		//Update Current Page
+		maxPage = parseInt(Math.floor(allFrames.length/framesPerPage));
+		if (currentPage >= maxPage) {
+			currentPage = maxPage;
+			var onEmptyPage = (allFrames.length%framesPerPage===0);
+			if (onEmptyPage && currentPage !== 0) {
+				currentPage -= 1;
+			}
+		}
+		
 		refreshFrames();
 	} else {
 		alert("No data is selected!");
@@ -193,16 +214,24 @@ function editSelection() {
 	}
 }
 
+function sortNumbers(smallNum,bigNum) {
+	return bigNum - smallNum;
+}
+
 function toggleSelection(frameId) {
 	if (selectedFrames.indexOf(frameId) >= 0) { //If the Frame was already selected.
 		var indexOfFrame = selectedFrames.indexOf(frameId);
 		selectedFrames.splice(indexOfFrame,1);
 	} else {
-		selectedFrames[selectedFrames.length] = frameId;
+		selectedFrames.push(parseInt(frameId));
+		selectedFrames.sort(sortNumbers); //Sorts from greatest to Least
 	}
-	selectedFrames.sort();
-	selectedFrames.reverse();
-	allSelected = false; //Remember that a modification was made after selecting all frames.
+	
+	if (selectedFrames.length === allFrames.length) {
+		allSelected = true; //Remember that a modification was made after selecting all frames.
+	} else {
+		allSelected = false; //Remember that a modification was made after selecting all frames.
+	}
 }
 
 function selectAll() {
@@ -211,8 +240,8 @@ function selectAll() {
 		allSelected = false;
 	} else {
 		var maxFrameId = (allFrames.length-1)
-		for(i = 0; i <= maxFrameId; i++) { //Select all Frames from greatest to smallest index
-			selectedFrames.splice(0, 0, i );
+		for(i = maxFrameId; i >= 0; i--) { //Select all Frames from greatest to smallest index
+			selectedFrames.push(i);
 		allSelected = true;
 		}
 	}	
@@ -235,16 +264,25 @@ function duplicateSelection() {
 }
 
 function changeCurrentPage(newPage) {
-	currentPage = newPage;
+	currentPage = parseInt(newPage);
 	refreshFrames();
+}
+
+function changeCurrentPage_button() {
+	var desiredPage = document.getElementById("pageJump").value;
+	var emptyPagePresent = (desiredPage == maxPage && allFrames.length%framesPerPage===0);
+	if (0 <= desiredPage && desiredPage <= maxPage && !emptyPagePresent) { 
+		changeCurrentPage(desiredPage);
+	} else {
+		alert("Invalid page number!");
+	}
 }
 
 function refreshFrames() {	
 	//Re-write all inner HTML
 	var container = document.getElementById("mainContainer");
 	container.innerHTML = "";
-	try 
-		{
+	try {
 		var allFramesLength = allFrames.length;
 		var j = 0 //Frame for individual pages (ie, 0 to framesPerPage).
 		for (var i = currentPage*framesPerPage; i < allFramesLength; i++) {
@@ -268,16 +306,16 @@ function refreshFrames() {
 				"<div id=\"frameCheckboxCombo\">"
 				+ "<div style=\"float:left;\">" //Checkbox
 					//Note that Checkbox ID === Frame ID === Edit Button ID = i
-				+ "<input type=\"checkbox\" id=\"" + i + "\" " 
-				+ "onclick=\"toggleSelection(" 
+				+ "<input type=\"checkbox\" id=" + i  
+				+ " onclick=\"toggleSelection(" 
 				+ i + ");\" " + selected + " />"
 				+ "</div>"
 				+ "<div id=\"numLabel\" style=\"float:left;\">" //Label (number)
 				+ i + ".) &nbsp"
 				+ "</div>"
 				+ "<div style=\"float:right;\">" //Edit Button
-				+ "<input type=\"button\"  value= \"E\" id=\"" + i + "\" " 
-				+ "onclick=\"edit(" 
+				+ "<input type=\"button\"  value= \"E\" id=" + i
+				+ " onclick=\"edit(" 
 				+ i + ");\" " + selected + " />"
 				+ "</div>"
 				+"<div style=\"float:right;"  //Data
@@ -288,10 +326,11 @@ function refreshFrames() {
 			);
 			
 		}
+		
 		//Display Page Options below Frames
 		var pagesContainer = document.getElementById("pagesContainer");
 		pagesContainer.innerHTML = "Page Options: ";
-			var maxPage = Math.floor(allFramesLength/framesPerPage);
+		maxPage = parseInt(Math.floor(allFramesLength/framesPerPage));
 			for (var i = 0; i <= maxPage; i++) {
 				if (i===maxPage && allFramesLength%framesPerPage===0){ //Don't allow empty pages.
 					break;
@@ -305,7 +344,16 @@ function refreshFrames() {
 					);
 				}
 			}
-
+		pagesContainer.innerHTML += ("<br />Page Jump: "
+			+ "<input id=\"pageJump\" type=\"text\" "
+			+ "style=\"width:25px;\" value="+currentPage+" />"
+			);
+		pagesContainer.innerHTML += (
+			"<input type=\"button\" value=\"Go!\" "
+			+ "onclick=\"changeCurrentPage_button();\" />"
+			);
+			
+		
 		//###TO BE REMOVED IN FINAL VERSION (devContainer REFRESH)
 		var devContainer = document.getElementById("devContainer");
 		devContainer.innerHTML = (
@@ -319,11 +367,36 @@ function refreshFrames() {
 			+"<input type=\"button\" onclick=\"refreshFrames()\" value=\"REFRESH\"/>"
 			);
 	}
-	catch (error)
-		{
+	catch (error){
 		alert("ERROR:\n" + error.message);
 	}
 }
+
+function downloadFrames() {
+	var allContents = "";
+	for (frameId in allFrames) {
+		allContents += allFrames[frameId].content + ", ";
+	}
+	
+	//Randomly Generate Filename 
+	var fileName = "";
+	var fileNameLength = 10;
+	var whiteList = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	
+	for (var i=0; i < fileNameLength; i++) {
+		var randomIndex = Math.floor(Math.random() * whiteList.length);
+		fileName += whiteList.charAt(randomIndex);
+	}
+	fileName += ".csv"; //Append extension.
+	
+	alert("Javascript can't natively download/create files. Lame potatoes...")
+	alert(
+		"File Location:\n"+ window.location.pathname + "/" 
+		+ fileName + "\n\n" 
+		+ "File Contents:\n"+allContents
+		);
+}
+
 
 refreshFrames();
 
